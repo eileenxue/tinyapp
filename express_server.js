@@ -9,7 +9,7 @@ app.set("view engine", "ejs");
 
 // Simulate unique shortURL by returning a string of 6 random alphanumeric characters
 function generateRandomString() {
-  let string = Math.random().toString(36).slice(2, 8);
+  let string = Math.random().toString(36).substring(2, 8);
   return string;
 }
 
@@ -67,6 +67,20 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[deleteURL];
 
   // Redirect back to index page
+  res.redirect(`/urls`);
+})
+
+// Update/Edit URL
+app.post("/urls/:shortURL", (req, res) => {
+  // extract the shortURL 
+  const shortURL = req.params.shortURL;
+
+  // extract new URL content from the form's input's name => req.body
+  const longURL = req.body.longURL;
+
+  // update the longURL content in the db associated with that shortURL
+  urlDatabase[shortURL] = longURL;
+
   res.redirect(`/urls`);
 })
 
