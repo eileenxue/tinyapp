@@ -59,8 +59,16 @@ app.post("/urls", (req, res) => {
 
   // Redirect page to shortURL
   res.redirect(`/urls/${shortURL}`);
-
 });
+
+// Delete the shortURL entry
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const deleteURL = req.params.shortURL;
+  delete urlDatabase[deleteURL];
+
+  // Redirect back to index page
+  res.redirect(`/urls`);
+})
 
 
 app.listen(PORT, () => {
