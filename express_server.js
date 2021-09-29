@@ -103,6 +103,12 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 })
 
+// Login Page
+app.get("/login", (req, res) => {
+  const templateVars = { username: req.cookies["username"], user: null };
+  res.render("urls_login", templateVars);
+})
+
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   // res.send("Ok");  // Respond with 'Ok' (we will replace this)
