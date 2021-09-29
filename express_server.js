@@ -164,16 +164,27 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const userId = generateRandomString();
   
-  // check if user exist already
-  // if yes, send an eror
-  // if no, proceed
+  // check if user exist already, if yes send an error, else proceed
   const userFound = findUsersByEmail(email, users);
-  console.log(userFound);
-  
+
   if(userFound) {
-    res.status(401).send("Sorry, that user already exists!");
+    res.status(400).send("Sorry, that user already exists!");
     return;
   }
+  
+  // Registration Form Error Handling
+  if(email.length === 0 && password.length === 0) {
+    res.status(400).send("Please enter your email and password");
+    return;
+  } else if (email.length === 0) {
+    res.status(400).send("Please enter your email");
+    return;
+  } else if (password.length === 0) {
+    res.status(400).send("Please enter your password");
+    return;
+  }
+
+  console.log(userFound);
 
   // const userId = createUser(email, password, users);
   
