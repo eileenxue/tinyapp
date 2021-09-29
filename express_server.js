@@ -88,7 +88,7 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect(`/urls`);
 })
 
-// Login button
+// Login Functionality
 app.post("/login", (req, res) => {
   // Set cookie to username
   const username = req.body.username;
@@ -96,6 +96,14 @@ app.post("/login", (req, res) => {
 
   // Redirect back to urls
   res.redirect(`/urls`);
+})
+
+// Logout Functionality
+app.post("/logout", (req, res) => {
+  // clears the username cookie
+  res.clearCookie('username');
+  // Redirect back to urls
+  res.redirect(`/urls`); 
 })
 
 
