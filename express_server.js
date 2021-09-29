@@ -5,6 +5,9 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.set("view engine", "ejs");
 
 // Simulate unique shortURL by returning a string of 6 random alphanumeric characters
@@ -81,6 +84,16 @@ app.post("/urls/:shortURL", (req, res) => {
   // update the longURL content in the db associated with that shortURL
   urlDatabase[shortURL] = longURL;
 
+  res.redirect(`/urls`);
+})
+
+// Login button
+app.post("/login", (req, res) => {
+  // Set cookie to username
+  const username = req.body.username;
+  res.cookie('username', username);
+
+  // Redirect back to urls
   res.redirect(`/urls`);
 })
 
