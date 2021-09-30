@@ -89,7 +89,11 @@ app.get("/urls/new", (req, res) => {
   const userId = req.cookies['user_id'];
   const loggedInUser = users[userId];
   const templateVars = { user: loggedInUser };
-  res.render("urls_new", templateVars);
+  if (loggedInUser) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -109,13 +113,27 @@ app.get("/u/:shortURL", (req, res) => {
 // Registration Page
 app.get("/register", (req, res) => {
   const templateVars = { user: null };
-  res.render("urls_register", templateVars);
+  const userId = req.cookies['user_id'];
+  const loggedInUser = users[userId];
+  // Show the right pages when user is logged in and logged out
+  if (!loggedInUser) {
+    res.render("urls_register", templateVars);
+  } else {
+    res.redirect('/urls');
+  }
 })
 
 // Login Page
 app.get("/login", (req, res) => {
   const templateVars = { user: null };
-  res.render("urls_login", templateVars);
+  const userId = req.cookies['user_id'];
+  const loggedInUser = users[userId];
+  // Show the right pages when user is logged in and logged out
+  if (!loggedInUser) {
+    res.render("urls_login", templateVars);
+  } else {
+    res.redirect('/urls');
+  }
 })
 
 app.post("/urls", (req, res) => {
