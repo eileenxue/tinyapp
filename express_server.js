@@ -17,20 +17,27 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { 
+    longURL: "http://www.lighthouselabs.ca", 
+    userId: "123456"
+  },
+
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userId: "987654"
+  }
 };
 
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+  "123456": {
+    id: "123456", 
+    email: "user@email.com", 
+    password: "123"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
+ "987654": {
+    id: "987654", 
+    email: "user2@email.com", 
+    password: "321"
   }
 }
 
@@ -99,15 +106,26 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.cookies['user_id'];
   const loggedInUser = users[userId];
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: loggedInUser };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: loggedInUser };
   res.render("urls_show", templateVars);
 });
-
+// const urlExists = (shortURL, urlDatabase) => {
+//   return urlDatabase[shortURL];
+// }
 // Redirect the shortened URL to original longURL
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  
+  // check if shortURL params exist in urlDatabase;
+  const urlExists = shortURL in urlDatabase; 
+  
+  if(!urlExists) {
+    console.log("shortURL does not exist");
+    res.status(403).send("This URL does not exist");
+  } else {
+    const longURL = urlDatabase[shortURL].longURL;
+    res.redirect(longURL);
+  }
 });
 
 // Registration Page
@@ -140,10 +158,11 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   // res.send("Ok");  // Respond with 'Ok' (we will replace this)
   // res.status = 200;
-
+  const userId = req.cookies['user_id'];
+  const loggedInUser = users[userId];
   // Generate shortURL and then log that and longURL to urlDatabase
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userId: userId };
 
   // Redirect page to shortURL
   res.redirect(`/urls/${shortURL}`);
@@ -167,7 +186,7 @@ app.post("/urls/:shortURL", (req, res) => {
   const longURL = req.body.longURL;
 
   // update the longURL content in the db associated with that shortURL
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL].longURL = longURL;
 
   res.redirect(`/urls`);
 })
