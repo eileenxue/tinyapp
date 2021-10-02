@@ -10,6 +10,7 @@ const salt = bcrypt.genSaltSync(10);
 
 const { generateRandomString, findUsersByEmail, createUser, authenticateUser } = require('./helpers');
 
+app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(cookieSession({
@@ -17,8 +18,7 @@ app.use(cookieSession({
   keys: ["The best way to encrypt the values"]
 }));
 
-app.set("view engine", "ejs");
-
+// urlDatabase and users list pre-populated with data for assessment
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -31,7 +31,6 @@ const urlDatabase = {
   }
 };
 
-// In order to test dummy users
 const hashedPassword1 = bcrypt.hashSync('123', salt);
 const hashedPassword2 = bcrypt.hashSync('321', salt);
 
@@ -63,36 +62,32 @@ const urlsForUser = function(id) {
   return results;
 };
 
+// Redirecting from default link
 app.get("/", (req, res) => {
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   if (loggedInUser) {
     return res.redirect('/urls');
   }
-
   return res.redirect('/login');
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-// change from url to urls
+// The list of URLs displayed to the correct user
 app.get('/urls', (req, res) => {
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
+
   // Send an error if user is not logged in
   if (!loggedInUser) {
     return res.status(401).send("Please <a href='/login'>login</a> to see the URL list.");
   }
 
-  // Only show urls for the user that's logged in
   const urls = urlsForUser(loggedInUser.id);
-
   const templateVars = { urls: urls, user: loggedInUser };
   res.render("urls_index", templateVars);
 });
- 
+
+// Page to create new URLs
 app.get("/urls/new", (req, res) => {
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
@@ -104,23 +99,24 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+// Creation of new URLs
 app.post("/urls", (req, res) => {
-  
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
 
   if (!loggedInUser) {
     return res.redirect('/login');
   }
+
   // Generate shortURL and then log that and longURL to urlDatabase
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[shortURL] = { longURL: longURL, userId: userId };
 
-  // Redirect page to shortURL
   res.redirect(`/urls/${shortURL}`);
 });
 
+// Accessing the summary page for shortURLs with the right permissions
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
@@ -196,7 +192,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     return res.status(403).send('You do not have permission to delete this URL');
   }
   
-  // Delete and redirect back to URLs page
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);
 });
@@ -218,27 +213,21 @@ app.post("/urls/:shortURL", (req, res) => {
   if (urlDatabase[shortURL].userId !== loggedInUser.id) {
     return res.status(403).send("You can't edit this URL because it's not yours");
   }
-  // update the longURL content in the db associated with that shortURL
   urlDatabase[shortURL] = {longURL, userId};
-
   res.redirect(`/urls`);
 });
 
 // Login Functionality
 app.post("/login", (req, res) => {
-  // Get user info from form
   const email = req.body.email;
   const password = req.body.password;
   const userFound = findUsersByEmail(email, users);
   
   const user = authenticateUser(email, password, users);
 
-  // compare password with the email
   if (user) {
     // if valid, assign the user_id cookie to match user's ID
     req.session['user_id'] = userFound.id;
-
-    // Redirect back to urls
     res.redirect(`/urls`);
     return;
   }
@@ -251,7 +240,6 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   // clears the user_id cookie
   req.session = null;
-  // Redirect back to urls
   res.redirect(`/urls`);
 });
 
@@ -259,8 +247,6 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  
-  // check if user exist already, if yes send an error, else proceed
   const userFound = findUsersByEmail(email, users);
 
   if (userFound) {
@@ -286,7 +272,6 @@ app.post("/register", (req, res) => {
 
   res.redirect('/urls');
 });
-
 
 app.listen(PORT, () => {
   console.log(`myTinyApp listening on port ${PORT}!`);
