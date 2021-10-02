@@ -4,11 +4,16 @@ const PORT = 8080; // default port 8080
 
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["The best way to encrypt the values"]
+}))
 
 app.set("view engine", "ejs");
 
@@ -111,7 +116,7 @@ app.get("/urls.json", (req, res) => {
 
 // change from url to urls
 app.get('/urls', (req, res) => {
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   // console.log({userId});
   const loggedInUser = users[userId];
   // Send an error if user is not logged in
@@ -127,7 +132,7 @@ app.get('/urls', (req, res) => {
 })
  
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   const templateVars = { user: loggedInUser };
   if (loggedInUser) {
@@ -139,7 +144,7 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
   
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
 
   if (!loggedInUser) {
@@ -155,7 +160,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   const shortURL = req.params.shortURL;
   const urlExists = shortURL in urlDatabase; 
@@ -196,7 +201,7 @@ app.get("/u/:shortURL", (req, res) => {
 // Registration Page
 app.get("/register", (req, res) => {
   const templateVars = { user: null };
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   // Show the right pages when user is logged in and logged out
   if (loggedInUser) {
@@ -208,7 +213,7 @@ app.get("/register", (req, res) => {
 // Login Page
 app.get("/login", (req, res) => {
   const templateVars = { user: null };
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   // Show the right pages when user is logged in and logged out
   if (!loggedInUser) {
@@ -221,7 +226,7 @@ app.get("/login", (req, res) => {
 // Delete the shortURL entry
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
   
   // If the url does not belong to user performing the action
@@ -237,7 +242,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // Update/Edit URL
 app.post("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   const loggedInUser = users[userId];
 
   // Only the associated user can see their shortURLs
@@ -270,7 +275,7 @@ app.post("/login", (req, res) => {
   // compare password with the email
   if (user) {
     // if valid, assign the user_id cookie to match user's ID
-    res.cookie('user_id', userFound.id);
+    req.session['user_id'] = userFound.id;
 
     // Redirect back to urls
     res.redirect(`/urls`);
@@ -284,7 +289,7 @@ app.post("/login", (req, res) => {
 // Logout Functionality
 app.post("/logout", (req, res) => {
   // clears the user_id cookie
-  res.clearCookie('user_id');
+  req.session = null;
   // Redirect back to urls
   res.redirect(`/urls`); 
 })
@@ -329,7 +334,9 @@ app.post("/register", (req, res) => {
   // };
 
   // set user_id cookie to be newly generated ID
-  res.cookie('user_id', userId);
+  // req.session('user_id', userId);
+  req.session['user_id'] = userId;
+
   // redirect to /urls
   res.redirect('/urls');
 })
