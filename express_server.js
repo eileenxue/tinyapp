@@ -8,6 +8,8 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 
+const { generateRandomString, findUsersByEmail, createUser, authenticateUser } = require('./helpers');
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(cookieSession({
@@ -16,12 +18,6 @@ app.use(cookieSession({
 }))
 
 app.set("view engine", "ejs");
-
-// Simulate unique shortURL by returning a string of 6 random alphanumeric characters
-function generateRandomString() {
-  let string = Math.random().toString(36).substring(2, 8);
-  return string;
-}
 
 const urlDatabase = {
   "b2xVn2": { 
@@ -52,46 +48,7 @@ const users = {
   }
 }
 
-// Test to see if hashed password works
-// console.log(salt, users);
-
-// Create user logic function
-const findUsersByEmail = function (email, users) {
-  for (let userId in users) {
-    const user = users[userId];
-    if (email === user.email) {
-      return user;
-    }
-  }
-  return false;
-}
-
-// New helper function?
-const createUser = function (email, password, users) {
-  const userId = generateRandomString();
-
-  // add to user database
-  users[userId] = {
-    id: userId,
-    email: email, 
-    password: bcrypt.hashSync(password, salt)
-  };
-
-  return userId;
-}
-
-const authenticateUser = function (email, password, users) {
-  const userFound = findUsersByEmail(email, users);
-
-  if (userFound) {
-    if (bcrypt.compareSync(password, userFound.password)){
-      return userFound;
-    }
-  }
-  return false;
-};
-
-// Create function that returns the URLs where userID is equal to id of logged-in user
+// Returns the list of URLs that belongs to the logged-in user
 const urlsForUser = function (id) {
   const results = {};
   const keys = Object.keys(urlDatabase);
@@ -107,7 +64,13 @@ const urlsForUser = function (id) {
 }
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session['user_id'];
+  const loggedInUser = users[userId];
+  if (loggedInUser){
+    return res.redirect('/urls');
+  }
+
+  return res.redirect('/login');
 });
 
 app.get("/urls.json", (req, res) => {
@@ -117,7 +80,6 @@ app.get("/urls.json", (req, res) => {
 // change from url to urls
 app.get('/urls', (req, res) => {
   const userId = req.session['user_id'];
-  // console.log({userId});
   const loggedInUser = users[userId];
   // Send an error if user is not logged in
   if (!loggedInUser) {
@@ -231,7 +193,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   
   // If the url does not belong to user performing the action
   if (urlDatabase[shortURL].userId !== loggedInUser.id) {
-    // console.log(`${urlDatabase[shortURL].userId} !== ${loggedInUser.id}`)
     return res.status(403).send('You do not have permission to delete this URL');
   }
   
@@ -296,11 +257,8 @@ app.post("/logout", (req, res) => {
 
 // Register Functionality
 app.post("/register", (req, res) => {
-  // get user info such as email, password and randomly generated userID
   const email = req.body.email;
   const password = req.body.password;
-  // const hashedPassword = bcrypt.hashSync(password, salt);
-  // const userId = generateRandomString();
   
   // check if user exist already, if yes send an error, else proceed
   const userFound = findUsersByEmail(email, users);
@@ -310,7 +268,7 @@ app.post("/register", (req, res) => {
     return;
   }
   
-  // Registration Form Error Handling
+  // Handling registration form errors
   if(email.length === 0 && password.length === 0) {
     res.status(400).send("Please enter your email and password");
     return;
@@ -322,26 +280,14 @@ app.post("/register", (req, res) => {
     return;
   }
 
-  // console.log(userFound);
-
+  // Create new user and assign it with a new cookie session
   const userId = createUser(email, password, users);
-  
-  // add to user database
-  // users[userId] = {
-  //   id: userId,
-  //   email: email, 
-  //   password: bcrypt.hashSync(password, salt)
-  // };
-
-  // set user_id cookie to be newly generated ID
-  // req.session('user_id', userId);
   req.session['user_id'] = userId;
 
-  // redirect to /urls
   res.redirect('/urls');
 })
 
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`myTinyApp listening on port ${PORT}!`);
 });
