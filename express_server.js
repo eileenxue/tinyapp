@@ -3,9 +3,11 @@ const app = express();
 const PORT = 8080; // default port 8080
 
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
-
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs');
+const salt = bcrypt.genSaltSync(10);
+
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
 app.set("view engine", "ejs");
@@ -28,18 +30,25 @@ const urlDatabase = {
   }
 };
 
+// In order to test dummy users
+const hashedPassword1 = bcrypt.hashSync('123', salt);
+const hashedPassword2 = bcrypt.hashSync('321', salt);
+
 const users = { 
   "123456": {
     id: "123456", 
     email: "user@email.com", 
-    password: "123"
+    password: hashedPassword1
   },
  "987654": {
     id: "987654", 
     email: "user2@email.com", 
-    password: "321"
+    password: hashedPassword2
   }
 }
+
+// Test to see if hashed password works
+// console.log(salt, users);
 
 // Create user logic function
 const findUsersByEmail = function (email, users) {
@@ -53,24 +62,26 @@ const findUsersByEmail = function (email, users) {
 }
 
 // New helper function?
-// const createUser = function (email, password, users) {
-//   const userId = generateRandomString();
+const createUser = function (email, password, users) {
+  const userId = generateRandomString();
 
-//   // add to user database
-//   users[userId] = {
-//     id: userId,
-//     email: email, 
-//     password: password
-//   };
+  // add to user database
+  users[userId] = {
+    id: userId,
+    email: email, 
+    password: bcrypt.hashSync(password, salt)
+  };
 
-//   return userId;
-// }
+  return userId;
+}
 
 const authenticateUser = function (email, password, users) {
   const userFound = findUsersByEmail(email, users);
 
-  if (userFound && userFound.password === password) {
-    return userFound;
+  if (userFound) {
+    if (bcrypt.compareSync(password, userFound.password)){
+      return userFound;
+    }
   }
   return false;
 };
@@ -283,7 +294,8 @@ app.post("/register", (req, res) => {
   // get user info such as email, password and randomly generated userID
   const email = req.body.email;
   const password = req.body.password;
-  const userId = generateRandomString();
+  // const hashedPassword = bcrypt.hashSync(password, salt);
+  // const userId = generateRandomString();
   
   // check if user exist already, if yes send an error, else proceed
   const userFound = findUsersByEmail(email, users);
@@ -305,16 +317,16 @@ app.post("/register", (req, res) => {
     return;
   }
 
-  console.log(userFound);
+  // console.log(userFound);
 
-  // const userId = createUser(email, password, users);
+  const userId = createUser(email, password, users);
   
   // add to user database
-  users[userId] = {
-    id: userId,
-    email: email, 
-    password: password
-  };
+  // users[userId] = {
+  //   id: userId,
+  //   email: email, 
+  //   password: bcrypt.hashSync(password, salt)
+  // };
 
   // set user_id cookie to be newly generated ID
   res.cookie('user_id', userId);
