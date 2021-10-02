@@ -10,10 +10,15 @@
 </head>
 <body>
   <%- include('partials/_header'); %>
-  <main style="margin: 1em;">
-    <h3>My URLs</h3>
+  <main class="container mt-5">
+    <h3 class="mb-3">My URLs</h3>
+    <% if (Object.keys(urls).length === 0) { %>
+      <div class="alert alert-warning" role="alert">
+        There are no URLs here. Why don't you create one?
+      </div>
+      <% } else { %>
     <table class="table">
-      <thead>
+      <thead class="thead-light">
         <tr>
           <th scope="col">Short URL</th>
           <th scope="col">Long URL</th>
@@ -38,6 +43,7 @@
         <% } %>
       </tbody>
     </table>
+    <% } %>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
