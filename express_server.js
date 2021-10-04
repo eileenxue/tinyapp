@@ -187,6 +187,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
 
+  // If not logged in, display an error message
   if (!loggedInUser) {
     return res.status(403).send('Please log in if you want to delete URL');
   }
