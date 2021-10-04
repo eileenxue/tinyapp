@@ -186,6 +186,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   const userId = req.session['user_id'];
   const loggedInUser = users[userId];
+
+  if (!loggedInUser) {
+    return res.status(403).send('Please log in if you want to delete URL');
+  }
   
   // If the url does not belong to user performing the action
   if (urlDatabase[shortURL].userId !== loggedInUser.id) {
